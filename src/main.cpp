@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <StatusLed.h>
-#include <Display.h>
+#include <AlphaDisplay.h>
+#include <AnimatedDisplay.h>
+#include <animation/SweepAnimation.h>
 #include <WiFi.h>
 
 #include <SPIFFS.h>
@@ -9,7 +11,7 @@
 #define STATUSLED_DATA 2
 #define STATUSLED_CLOCK 12
 StatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
-Display *display;
+AnimatedDisplay *display;
 
 const String defaultSplash = "*** HEVI ***";
 
@@ -57,11 +59,14 @@ void initializeWiFi(eSPIFFS &fs)
 }
 
 String targets[] = {"Subscribers", "000000248791", "Views & Subs", "153M <> 248K"};
+Timeout messageTimeout;
 
 void setup()
 {
+  targets[3][0] |= 0x80; // add a decimal point to sample data
+
   Serial.begin(115200);
-  display = new Display();
+  display = new AnimatedDisplay(new AlphaDisplay());
 
   eSPIFFS fs(&Serial);
 
@@ -72,60 +77,20 @@ void setup()
   }
   display->show(splash);
 
-  initializeWiFi(fs);
+  messageTimeout.prepare(5000);
 
-  targets[3][0] |= 0x80; // add a decimal point to sample data
+  // initializeWiFi(fs);
 }
 
 uint8_t currentTarget = 0;
-String buffer = "            ";
 
 void loop()
 {
-  String target = targets[currentTarget];
-  currentTarget = (currentTarget + 1) % 4;
-
-  uint8_t nextChar = 0;
-  uint32_t frameCount = 0;
-  uint8_t frameDelay = 5;
-  uint8_t length = target.length();
-
-  int start = millis();
-  do
+  if (messageTimeout.periodic())
   {
-    if (nextChar < display->size() && frameCount % frameDelay == 0)
-    {
-      char newChar = (nextChar >= length || target[nextChar] == ' ') ? ' ' : 'z';
-      buffer[nextChar++] = newChar;
-    }
+    display->show(new SweepAnimation(targets[currentTarget]));
+    currentTarget = (currentTarget + 1) % 4;
+  }
 
-    for (int i = 0; i < length; ++i)
-    {
-      char dot = target[i] & 0x80;
-      char digit = buffer[i] & 0x7f;
-      char targetDigit = target[i] & 0x7f;
-      if (digit != targetDigit)
-      {
-        if (i < nextChar && targetDigit != ' ')
-        {
-          buffer[i] = (digit - 1);
-        }
-      }
-      else
-      {
-        buffer[i] = buffer[i] | dot;
-      }
-    }
-
-    ++frameCount;
-    display->show(buffer);
-    delay(10);
-  } while (buffer.substring(0, length) != target);
-
-  int elapsed = millis() - start;
-  char resultText[60];
-  snprintf(resultText, sizeof(resultText), "Elapsed: %4d; Frames: %4d; FPS: %d", elapsed, frameCount, frameCount * 1000 / elapsed);
-  Serial.println(resultText);
-
-  delay(5000);
+  display->tick();
 }
