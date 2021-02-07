@@ -52,6 +52,7 @@ void AnimatedDisplay::show(Animation *animation)
     {
         delete oldAnimation;
     }
+    tick();
 }
 
 void AnimatedDisplay::stop()

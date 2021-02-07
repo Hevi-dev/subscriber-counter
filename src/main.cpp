@@ -23,30 +23,29 @@
 //----------------------------------------------------------------------------//
 
 #include <Arduino.h>
+
+#include <WiFi.h>
+#include <SPIFFS.h>
+#include <Effortless_SPIFFS.h>
+
 #include <StatusLed.h>
 #include <AlphaDisplay.h>
 #include <AnimatedDisplay.h>
 #include <animation/SweepAnimation.h>
-#include <WiFi.h>
 
-#include <SPIFFS.h>
-#include <Effortless_SPIFFS.h>
+#include <config.h>
 
 #define STATUSLED_DATA 2
 #define STATUSLED_CLOCK 12
 StatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
 AnimatedDisplay *display;
+config_t config;
 
 const String defaultSplash = "*** HEVI ***";
 
-void initializeWiFi(eSPIFFS &fs)
+void initializeWiFi(String ssid, String password)
 {
   status.setColor(rgb_color(0, 0, 255));
-  String ssid;
-  String password;
-
-  fs.openFromFile("/wifi-ssid", ssid);
-  fs.openFromFile("/wifi-password", password);
 
   ssid.trim();
   password.trim();
@@ -54,7 +53,7 @@ void initializeWiFi(eSPIFFS &fs)
   if (ssid.length() == 0)
   {
     status.setColor(rgb_color(255, 0, 0));
-    Serial.println("Wifi SSID not set.");
+    Serial.println(F("Wifi SSID not set."));
     while (true)
     {
       sleep(600);
@@ -82,6 +81,16 @@ void initializeWiFi(eSPIFFS &fs)
   status.clearColor();
 }
 
+void showSplashScreen(eSPIFFS &fs)
+{
+  String splash;
+  if (!fs.openFromFile("/splash", splash))
+  {
+    splash = defaultSplash;
+  }
+  display->show(splash);
+}
+
 String targets[] = {"Subscribers", "000000248791", "Views & Subs", "153M <> 248K"};
 Timeout messageTimeout;
 
@@ -94,16 +103,11 @@ void setup()
 
   eSPIFFS fs(&Serial);
 
-  String splash;
-  if (!fs.openFromFile("/splash", splash))
-  {
-    splash = defaultSplash;
-  }
-  display->show(splash);
+  showSplashScreen(fs);
+  loadSettings(fs, config);
+  initializeWiFi(config.secrets.ssid, config.secrets.password);
 
   messageTimeout.prepare(5000);
-
-  // initializeWiFi(fs);
 }
 
 uint8_t currentTarget = 0;
