@@ -34,12 +34,16 @@
 #include <animation/SweepAnimation.h>
 
 #include <config.h>
+#include <youtube.h>
 
 #define STATUSLED_DATA 2
 #define STATUSLED_CLOCK 12
 StatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
 AnimatedDisplay *display;
 config_t config;
+
+#define SECONDS (1000)
+#define MINUTES (SECONDS * 60)
 
 const String defaultSplash = "*** HEVI ***";
 
@@ -91,13 +95,10 @@ void showSplashScreen(eSPIFFS &fs)
   display->show(splash);
 }
 
-String targets[] = {"Subscribers", "000000248791", "Views & Subs", "153M <> 248K"};
-Timeout messageTimeout;
+Timeout fetchDataTimeout;
 
 void setup()
 {
-  targets[3][0] |= 0x80; // add a decimal point to sample data
-
   Serial.begin(115200);
   display = new AnimatedDisplay(new AlphaDisplay());
 
@@ -107,17 +108,23 @@ void setup()
   loadSettings(fs, config);
   initializeWiFi(config.secrets.ssid, config.secrets.password);
 
-  messageTimeout.prepare(5000);
+  fetchDataTimeout.prepare(60 * MINUTES);
 }
 
-uint8_t currentTarget = 0;
+String oldCount;
 
 void loop()
 {
-  if (messageTimeout.periodic())
+  if (fetchDataTimeout.periodic())
   {
-    display->show(new SweepAnimation(targets[currentTarget]));
-    currentTarget = (currentTarget + 1) % 4;
+    status.setColor(rgb_color(255, 255, 255));
+    String newCount = youtube::getSubscriberCount(config.secrets.yt_channel_id, config.secrets.yt_api_key);
+    status.clearColor();
+    if (newCount != oldCount)
+    {
+      oldCount = newCount;
+      display->show(new SweepAnimation(newCount));
+    }
   }
 
   display->tick();

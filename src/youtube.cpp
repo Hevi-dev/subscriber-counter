@@ -22,29 +22,51 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#include "config.h"
+#include "youtube.h"
+
 #include <ArduinoJson.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <HttpClient.h>
+#include <StreamUtils.h>
 
-void loadSettings(eSPIFFS &fs, config_t &config)
+namespace youtube
 {
-  String data;
-  if (!fs.openFromFile("/secrets.json", data)) {
-    Serial.println(F("No settings found to load"));
-    return;
-  }
+    const String channelEndpoint = "/youtube/v3/channels?part=statistics&id=<CHANNEL>&key=<APIKEY>";
+    const String youtubeHost = "youtube.googleapis.com";
 
-  auto capacity = JSON_OBJECT_SIZE(CONFIG_NUMBER_OF_SECRETS) + data.length();
-  DynamicJsonDocument doc(capacity);
-  auto error = deserializeJson(doc, data);
-  if (error)
-  {
-    Serial.print(F("deserializeJson() failed with code "));
-    Serial.println(error.c_str());
-    return;
-  }
+    String getSubscriberCount(String channelId, String apiKey)
+    {
+        String result = F("* No Data *");
+        WiFiClientSecure client;
+        HttpClient http(client, youtubeHost, 443);
+        String endpoint = channelEndpoint;
+        endpoint.replace("<CHANNEL>", channelId);
+        endpoint.replace("<APIKEY>", apiKey);
 
-  config.secrets.ssid = doc["ssid"].as<String>();
-  config.secrets.password = doc["password"].as<String>();
-  config.secrets.yt_api_key = doc["yt_api_key"].as<String>();
-  config.secrets.yt_channel_id = doc["yt_channel_id"].as<String>();
-}
+        http.get(endpoint);
+        auto statusCode = http.responseStatusCode();
+        if (statusCode == 200)
+        {
+            auto length = http.contentLength();
+
+            StaticJsonDocument<200> filter;
+            filter["items"][0]["statistics"]["subscriberCount"] = true;
+
+            DynamicJsonDocument doc(256 + length);
+            ReadBufferingClient buffer(http, 128);
+            deserializeJson(doc, buffer, DeserializationOption::Filter(filter));
+            uint32_t count = doc["items"][0]["statistics"]["subscriberCount"];
+            char text[13];
+            snprintf(text, sizeof(text), "%012d", count);
+            result = text;
+        }
+        else
+        {
+            Serial.printf("Error loading document: %d\n", statusCode);
+            Serial.println(http.responseBody());
+        }
+
+        return result;
+    }
+} // namespace youtube
