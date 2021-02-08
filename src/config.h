@@ -37,8 +37,11 @@ struct secrets_t
 // NOTE: Keep this number in sync with the above struct.
 #define CONFIG_NUMBER_OF_SECRETS 4
 
-struct config_t {
+struct settings_t {
+    uint16_t youtubeRefreshMinutes = 120;
     secrets_t secrets;
 };
+// NOTE: Keep this number in sync with the above struct.
+#define CONFIG_NUMBER_OF_SETTINGS 4
 
-void loadSettings(eSPIFFS &fs, config_t &config);
+void loadConfiguration(eSPIFFS &fs, settings_t &config);

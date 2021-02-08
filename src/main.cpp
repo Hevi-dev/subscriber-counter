@@ -39,8 +39,10 @@
 #define STATUSLED_DATA 2
 #define STATUSLED_CLOCK 12
 StatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
+
 AnimatedDisplay *display;
-config_t config;
+Timeout fetchDataTimeout;
+settings_t config;
 
 #define SECONDS (1000)
 #define MINUTES (SECONDS * 60)
@@ -95,8 +97,6 @@ void showSplashScreen(eSPIFFS &fs)
   display->show(splash);
 }
 
-Timeout fetchDataTimeout;
-
 void setup()
 {
   Serial.begin(115200);
@@ -105,16 +105,16 @@ void setup()
   eSPIFFS fs(&Serial);
 
   showSplashScreen(fs);
-  loadSettings(fs, config);
+  loadConfiguration(fs, config);
   initializeWiFi(config.secrets.ssid, config.secrets.password);
 
-  fetchDataTimeout.prepare(60 * MINUTES);
+  fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
 }
-
-String oldCount;
 
 void loop()
 {
+  static String oldCount;
+
   if (fetchDataTimeout.periodic())
   {
     status.setColor(rgb_color(255, 255, 255));
