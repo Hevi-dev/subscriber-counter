@@ -24,22 +24,18 @@
 
 #pragma once
 
-#include <APA102.h>
+typedef struct color_t {
+    uint8_t _red;
+    uint8_t _green;
+    uint8_t _blue;
 
-template <uint8_t dataPin, uint8_t clockPin>
+    color_t() {}
+    color_t(uint8_t red, uint8_t green, uint8_t blue) : _red(red), _green(green), _blue(blue) {}
+} color_t;
+
 class StatusLed
 {
 public:
-  void setColor(rgb_color color, float brightness = 1.0)
-  {
-    led.write(&color, 1, uint8_t(brightness * 31));
-  }
-
-  void clearColor()
-  {
-    this->setColor(rgb_color(0, 0, 0), 0.0);
-  }
-
-private:
-  APA102<dataPin, clockPin> led;
+  virtual void setColor(color_t color, float brightness = 1.0) = 0;
+  virtual void clearColor() = 0;
 };

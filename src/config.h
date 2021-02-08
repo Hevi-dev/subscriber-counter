@@ -39,9 +39,10 @@ struct secrets_t
 
 struct settings_t {
     uint16_t youtubeRefreshMinutes = 120;
+    String splashScreen = F("*** Hevi ***");
     secrets_t secrets;
 };
 // NOTE: Keep this number in sync with the above struct.
-#define CONFIG_NUMBER_OF_SETTINGS 4
+#define CONFIG_NUMBER_OF_SETTINGS 3
 
 void loadConfiguration(eSPIFFS &fs, settings_t &config);

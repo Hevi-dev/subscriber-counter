@@ -22,62 +22,26 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#include <Arduino.h>
+#pragma once
 
-#include <SPIFFS.h>
-#include <Effortless_SPIFFS.h>
+#include "StatusLed.h"
+#include <APA102.h>
 
-#include <DotStarStatusLed.h>
-#include <AlphaDisplay.h>
-#include <AnimatedDisplay.h>
-#include <animation/SweepAnimation.h>
-
-#include <config.h>
-#include <wifi_setup.h>
-#include <youtube.h>
-
-#define STATUSLED_DATA 2
-#define STATUSLED_CLOCK 12
-DotStarStatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
-
-AnimatedDisplay *display;
-Timeout fetchDataTimeout;
-settings_t config;
-
-#define SECONDS (1000)
-#define MINUTES (SECONDS * 60)
-
-void setup()
+template <uint8_t dataPin, uint8_t clockPin>
+class DotStarStatusLed : public StatusLed
 {
-  Serial.begin(115200);
-  display = new AnimatedDisplay(new AlphaDisplay());
-
-  eSPIFFS fs(&Serial);
-
-  loadConfiguration(fs, config);
-
-  display->show(config.splashScreen);
-
-  initializeWiFi(status, config.secrets.ssid, config.secrets.password);
-
-  fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
-}
-
-void loop()
-{
-  static String oldCount;
-
-  if (fetchDataTimeout.periodic())
+public:
+  void setColor(color_t color, float brightness = 1.0)
   {
-    status.setColor(color_t(255, 255, 255));
-    String newCount = youtube::getSubscriberCount(config.secrets.yt_channel_id, config.secrets.yt_api_key);
-    status.clearColor();
-    if (newCount != oldCount)
-    {
-      oldCount = newCount;
-      display->show(new SweepAnimation(newCount));
-    }
+    rgb_color _color = rgb_color(color._red, color._green, color._blue);
+    led.write(&_color, 1, uint8_t(brightness * 31));
   }
 
-  display->tick();
-}
+  void clearColor()
+  {
+    this->setColor(color_t(0, 0, 0), 0.0);
+  }
+
+private:
+  APA102<dataPin, clockPin> led;
+};
