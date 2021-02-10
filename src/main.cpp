@@ -65,17 +65,23 @@ void setup()
 
 void loop()
 {
-  static String oldCount;
+  static uint32_t oldCount = UINT32_MAX;
 
   if (fetchDataTimeout.periodic())
   {
     status.setColor(color_t(255, 255, 255));
-    String newCount = youtube::getSubscriberCount(config.secrets.yt_channel_id, config.secrets.yt_api_key);
+    youtube::stats_t stats = youtube::getChannelStatistics(config.secrets.yt_channel_id, config.secrets.yt_api_key);
     status.clearColor();
-    if (newCount != oldCount)
+    if (!stats.valid)
     {
-      oldCount = newCount;
-      display->show(new SweepAnimation(newCount));
+      display->show(F("* No Data *"));
+    }
+    else if (stats.viewCount != oldCount)
+    {
+      oldCount = stats.viewCount;
+      char text[13];
+      snprintf(text,sizeof(text), "%012d", stats.viewCount);
+      display->show(new SweepAnimation(text));
     }
   }
 

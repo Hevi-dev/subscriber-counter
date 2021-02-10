@@ -35,9 +35,9 @@ namespace youtube
     const String channelEndpoint = "/youtube/v3/channels?part=statistics&id=<CHANNEL>&key=<APIKEY>";
     const String youtubeHost = "youtube.googleapis.com";
 
-    String getSubscriberCount(String channelId, String apiKey)
+    stats_t getChannelStatistics(String channelId, String apiKey)
     {
-        String result = F("* No Data *");
+        stats_t result = {0};
         WiFiClientSecure client;
         HttpClient http(client, youtubeHost, 443);
         String endpoint = channelEndpoint;
@@ -51,15 +51,26 @@ namespace youtube
             auto length = http.contentLength();
 
             StaticJsonDocument<200> filter;
-            filter["items"][0]["statistics"]["subscriberCount"] = true;
+            auto statisticsFilter = filter["items"][0]["statistics"];
+            statisticsFilter["subscriberCount"] = true;
+            statisticsFilter["viewCount"] = true;
 
             DynamicJsonDocument doc(256 + length);
-            ReadBufferingClient buffer(http, 128);
-            deserializeJson(doc, buffer, DeserializationOption::Filter(filter));
-            uint32_t count = doc["items"][0]["statistics"]["subscriberCount"];
-            char text[13];
-            snprintf(text, sizeof(text), "%012d", count);
-            result = text;
+            ReadBufferingClient buffer(http, length);
+            auto error = deserializeJson(doc, buffer, DeserializationOption::Filter(filter));
+
+            if (!error)
+            {
+                auto statistics = doc["items"][0]["statistics"];
+                result.subscriberCount = statistics["subscriberCount"];
+                result.viewCount = statistics["viewCount"];
+                result.valid = true;
+            }
+            else
+            {
+                Serial.printf("Error parsing document: %s\n", error.c_str());
+                Serial.println(http.responseBody());
+            }
         }
         else
         {

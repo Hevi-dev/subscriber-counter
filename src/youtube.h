@@ -28,5 +28,11 @@
 
 namespace youtube
 {
-    String getSubscriberCount(String channelId, String apiKey);
+    typedef struct stats_t {
+        bool valid;
+        uint32_t subscriberCount;
+        uint32_t viewCount;
+    } stats_t;
+
+    stats_t getChannelStatistics(String channelId, String apiKey);
 }
