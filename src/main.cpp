@@ -60,17 +60,25 @@ bool cyclePages = false;
 #define SECONDS (1000)
 #define MINUTES (SECONDS * 60)
 
-void nextPage(EButton &btn)
+void nextPage(EButton &)
 {
   pagedDisplay->nextPage();
 }
 
-void previousPage(EButton &btn)
+void previousPage(EButton &)
 {
   pagedDisplay->previousPage();
 }
 
+void togglePageCycle(EButton &btn)
+{
+  cyclePages = true;
+  pageCycleTimeout.reset();
+  nextPage(btn);
+}
+
 Timeout updateClockTimeout;
+
 void updateClock()
 {
   tm currentTime;
@@ -106,8 +114,10 @@ void setup()
 
   nextPageButton.attachEachClick(nextPage);
   nextPageButton.setDebounceTime(DEBOUNCE_TIME);
+  nextPageButton.attachLongPressStart(togglePageCycle);
   previousPageButton.attachEachClick(previousPage);
   previousPageButton.setDebounceTime(DEBOUNCE_TIME);
+  previousPageButton.attachLongPressStart(togglePageCycle);
 }
 
 void loop()
