@@ -26,6 +26,7 @@
 
 #include <SPIFFS.h>
 #include <Effortless_SPIFFS.h>
+#include <EButton.h>
 
 #include <DotStarStatusLed.h>
 #include <PagedDisplay.h>
@@ -45,11 +46,28 @@ PagedDisplay<2> *pagedDisplay;
 Display *display;
 AnimatedDisplay *subDisplay, *viewDisplay;
 Timeout fetchDataTimeout;
-Timeout pageTimeout;
 settings_t config;
+
+#define DEBOUNCE_TIME 10
+const int nextPagePin = 14;
+const int previousPagePin = 15;
+EButton nextPageButton(nextPagePin, false);
+EButton previousPageButton(previousPagePin, false);
+Timeout pageCycleTimeout;
+bool cyclePages = false;
 
 #define SECONDS (1000)
 #define MINUTES (SECONDS * 60)
+
+void nextPage(EButton &btn)
+{
+  pagedDisplay->nextPage();
+}
+
+void previousPage(EButton &btn)
+{
+  pagedDisplay->previousPage();
+}
 
 void setup()
 {
@@ -68,7 +86,12 @@ void setup()
   initializeWiFi(status, config.secrets.ssid, config.secrets.password);
 
   fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
-  pageTimeout.start(10 * SECONDS);
+  pageCycleTimeout.start(10 * SECONDS);
+
+  nextPageButton.attachEachClick(nextPage);
+  nextPageButton.setDebounceTime(DEBOUNCE_TIME);
+  previousPageButton.attachEachClick(previousPage);
+  previousPageButton.setDebounceTime(DEBOUNCE_TIME);
 }
 
 void loop()
@@ -104,10 +127,13 @@ void loop()
     }
   }
 
-  if (pageTimeout.periodic()) {
+  if (cyclePages && pageCycleTimeout.periodic())
+  {
     pagedDisplay->nextPage();
   }
 
+  nextPageButton.tick();
+  previousPageButton.tick();
   subDisplay->tick();
   viewDisplay->tick();
 }
