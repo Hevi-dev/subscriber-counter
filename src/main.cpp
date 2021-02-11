@@ -28,6 +28,7 @@
 #include <Effortless_SPIFFS.h>
 
 #include <DotStarStatusLed.h>
+#include <PagedDisplay.h>
 #include <AlphaDisplay.h>
 #include <AnimatedDisplay.h>
 #include <animation/SweepAnimation.h>
@@ -40,8 +41,11 @@
 #define STATUSLED_CLOCK 12
 DotStarStatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
 
-AnimatedDisplay *display;
+PagedDisplay<2> *pagedDisplay;
+Display *display;
+AnimatedDisplay *subDisplay, *viewDisplay;
 Timeout fetchDataTimeout;
+Timeout pageTimeout;
 settings_t config;
 
 #define SECONDS (1000)
@@ -50,7 +54,10 @@ settings_t config;
 void setup()
 {
   Serial.begin(115200);
-  display = new AnimatedDisplay(new AlphaDisplay());
+  pagedDisplay = new PagedDisplay<2>(new AlphaDisplay());
+  display = pagedDisplay->getDisplayForPage(0);
+  subDisplay = new AnimatedDisplay(display);
+  viewDisplay = new AnimatedDisplay(pagedDisplay->getDisplayForPage(1));
 
   eSPIFFS fs(&Serial);
 
@@ -61,11 +68,13 @@ void setup()
   initializeWiFi(status, config.secrets.ssid, config.secrets.password);
 
   fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
+  pageTimeout.start(10 * SECONDS);
 }
 
 void loop()
 {
-  static uint32_t oldCount = UINT32_MAX;
+  static uint32_t oldViewCount = UINT32_MAX;
+  static uint32_t oldSubCount = UINT32_MAX;
 
   if (fetchDataTimeout.periodic())
   {
@@ -76,14 +85,29 @@ void loop()
     {
       display->show(F("* No Data *"));
     }
-    else if (stats.viewCount != oldCount)
+    else
     {
-      oldCount = stats.viewCount;
-      char text[13];
-      snprintf(text,sizeof(text), "%012d", stats.viewCount);
-      display->show(new SweepAnimation(text));
+      if (stats.viewCount != oldViewCount)
+      {
+        oldViewCount = stats.viewCount;
+        char text[13];
+        snprintf(text, sizeof(text), "V %010d", stats.viewCount);
+        viewDisplay->show(new SweepAnimation(text));
+      }
+      if (stats.subscriberCount != oldSubCount)
+      {
+        oldSubCount = stats.subscriberCount;
+        char text[13];
+        snprintf(text, sizeof(text), "S %010d", stats.subscriberCount);
+        subDisplay->show(new SweepAnimation(text));
+      }
     }
   }
 
-  display->tick();
+  if (pageTimeout.periodic()) {
+    pagedDisplay->nextPage();
+  }
+
+  subDisplay->tick();
+  viewDisplay->tick();
 }
