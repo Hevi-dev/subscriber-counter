@@ -1,3 +1,4 @@
 {
-    "yt_refresh_minutes": 60
+    "yt_refresh_minutes": 60,
+    "utc_offset_minutes": -480
 }

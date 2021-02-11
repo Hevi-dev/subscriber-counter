@@ -42,8 +42,9 @@
 #define STATUSLED_CLOCK 12
 DotStarStatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
 
-PagedDisplay<2> *pagedDisplay;
-Display *display;
+const int pageCount = 3;
+PagedDisplay<pageCount> *pagedDisplay;
+Display *display, *clockDisplay;
 AnimatedDisplay *subDisplay, *viewDisplay;
 Timeout fetchDataTimeout;
 settings_t config;
@@ -69,13 +70,26 @@ void previousPage(EButton &btn)
   pagedDisplay->previousPage();
 }
 
+Timeout updateClockTimeout;
+void updateClock()
+{
+  tm currentTime;
+  if (updateClockTimeout.periodic() && getLocalTime(&currentTime))
+  {
+    char timeText[13];
+    snprintf(timeText, sizeof(timeText), "T  %2d %02d %02d", currentTime.tm_hour, currentTime.tm_min, currentTime.tm_sec);
+    clockDisplay->show(timeText);
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
-  pagedDisplay = new PagedDisplay<2>(new AlphaDisplay());
+  pagedDisplay = new PagedDisplay<pageCount>(new AlphaDisplay());
   display = pagedDisplay->getDisplayForPage(0);
   subDisplay = new AnimatedDisplay(display);
   viewDisplay = new AnimatedDisplay(pagedDisplay->getDisplayForPage(1));
+  clockDisplay = pagedDisplay->getDisplayForPage(2);
 
   eSPIFFS fs(&Serial);
 
@@ -84,9 +98,11 @@ void setup()
   display->show(config.splashScreen);
 
   initializeWiFi(status, config.secrets.ssid, config.secrets.password);
+  configTime(config.utcOffsetMinutes * 60, 0, "pool.ntp.org", "time.nist.gov");
 
   fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
   pageCycleTimeout.start(10 * SECONDS);
+  updateClockTimeout.prepare(100);
 
   nextPageButton.attachEachClick(nextPage);
   nextPageButton.setDebounceTime(DEBOUNCE_TIME);
@@ -131,6 +147,8 @@ void loop()
   {
     pagedDisplay->nextPage();
   }
+
+  updateClock();
 
   nextPageButton.tick();
   previousPageButton.tick();

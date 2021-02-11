@@ -73,6 +73,8 @@ void loadSettings(eSPIFFS &fs, settings_t &config)
     }
 
     config.youtubeRefreshMinutes = doc["yt_refresh_minutes"].as<uint16_t>() | config.youtubeRefreshMinutes;
+    config.utcOffsetMinutes = doc["utc_offset_minutes"].as<int16_t>() | config.utcOffsetMinutes;
+
     JsonVariant splash = doc["splash_screen"];
     if (!splash.isNull())
     {

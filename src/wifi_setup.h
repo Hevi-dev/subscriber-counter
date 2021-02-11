@@ -38,6 +38,5 @@ void initializeWiFi(StatusLed &status, String ssid, String password)
   status.setColor(color_t(0, 255, 0));
   delay(250);
 
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   status.clearColor();
 }
