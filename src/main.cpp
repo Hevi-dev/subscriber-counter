@@ -24,13 +24,9 @@
 
 #include <Arduino.h>
 
-#include <SPIFFS.h>
-#include <Effortless_SPIFFS.h>
 #include <EButton.h>
 
-#include <DotStarStatusLed.h>
 #include <PagedDisplay.h>
-#include <AlphaDisplay.h>
 #include <AnimatedDisplay.h>
 #include <animation/SweepAnimation.h>
 
@@ -38,13 +34,31 @@
 #include <wifi_setup.h>
 #include <youtube.h>
 
-#define STATUSLED_DATA 2
-#define STATUSLED_CLOCK 12
-DotStarStatusLed<STATUSLED_DATA, STATUSLED_CLOCK> status;
+#ifdef DISPLAY_ALPHA
+#include <AlphaDisplay.h>
+#else
+#include <NullDisplay.h>
+#endif
 
-const int pageCount = 3;
+#ifdef STATUS_DOTSTAR
+#include <DotStarStatusLed.h>
+DotStarStatusLed<STATUS_DOTSTAR_DATA, STATUS_DOTSTAR_CLOCK> status;
+#elif STATUS_NEOPIXEL
+#include <StatusLed.h>
+NullStatusLed status;
+#endif
+
+#define BASE_PAGE_COUNT 2
+#ifdef HAS_RTC
+#define CLOCKPAGE_COUNT 1
+Display *clockDisplay;
+#else
+#define CLOCKPAGE_COUNT 0
+#endif
+const int pageCount = BASE_PAGE_COUNT + CLOCKPAGE_COUNT;
+
+Display *display;
 PagedDisplay<pageCount> *pagedDisplay;
-Display *display, *clockDisplay;
 AnimatedDisplay *subDisplay, *viewDisplay;
 Timeout fetchDataTimeout;
 settings_t config;
@@ -81,6 +95,7 @@ Timeout updateClockTimeout;
 
 void updateClock()
 {
+#ifdef HAS_RTC
   tm currentTime;
   if (updateClockTimeout.periodic() && getLocalTime(&currentTime))
   {
@@ -88,25 +103,33 @@ void updateClock()
     snprintf(timeText, sizeof(timeText), "T  %2d %02d %02d", currentTime.tm_hour, currentTime.tm_min, currentTime.tm_sec);
     clockDisplay->show(timeText);
   }
+#endif
 }
 
 void setup()
 {
   Serial.begin(115200);
-  pagedDisplay = new PagedDisplay<pageCount>(new AlphaDisplay());
+#ifdef DISPLAY_ALPHA
+  auto hardwareDisplay = new AlphaDisplay();
+#else
+  auto hardwareDisplay = new NullDisplay();
+#endif
+  pagedDisplay = new PagedDisplay<pageCount>(hardwareDisplay);
   display = pagedDisplay->getDisplayForPage(0);
   subDisplay = new AnimatedDisplay(display);
   viewDisplay = new AnimatedDisplay(pagedDisplay->getDisplayForPage(1));
+#ifdef HAS_RTC
   clockDisplay = pagedDisplay->getDisplayForPage(2);
+#endif
 
-  eSPIFFS fs(&Serial);
-
-  loadConfiguration(fs, config);
+  loadConfiguration(config);
 
   display->show(config.splashScreen);
 
   initializeWiFi(status, config.secrets.ssid, config.secrets.password);
+  #ifdef ESP32
   configTime(config.utcOffsetMinutes * 60, 0, "pool.ntp.org", "time.nist.gov");
+  #endif
 
   fetchDataTimeout.prepare(config.youtubeRefreshMinutes * MINUTES);
   pageCycleTimeout.start(10 * SECONDS);
@@ -140,14 +163,14 @@ void loop()
       {
         oldViewCount = stats.viewCount;
         char text[13];
-        snprintf(text, sizeof(text), "V %010d", stats.viewCount);
+        snprintf(text, sizeof(text), "V %010u", (unsigned int)stats.viewCount);
         viewDisplay->show(new SweepAnimation(text));
       }
       if (stats.subscriberCount != oldSubCount)
       {
         oldSubCount = stats.subscriberCount;
         char text[13];
-        snprintf(text, sizeof(text), "S %010d", stats.subscriberCount);
+        snprintf(text, sizeof(text), "S %010u", (unsigned int)stats.subscriberCount);
         subDisplay->show(new SweepAnimation(text));
       }
     }

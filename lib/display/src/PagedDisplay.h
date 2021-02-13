@@ -25,6 +25,7 @@
 #pragma once
 
 #include "Display.h"
+#include <assert.h>
 
 typedef uint8_t page_index_t;
 

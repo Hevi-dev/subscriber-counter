@@ -25,7 +25,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Effortless_SPIFFS.h>
 
 struct secrets_t
 {
@@ -37,13 +36,24 @@ struct secrets_t
 // NOTE: Keep this number in sync with the above struct.
 #define CONFIG_NUMBER_OF_SECRETS 4
 
-struct settings_t {
-    uint16_t youtubeRefreshMinutes = 120;
-    int16_t utcOffsetMinutes = 0;
-    String splashScreen = F("*** Hevi ***");
-    secrets_t secrets;
+struct settings_t
+{
+  uint16_t youtubeRefreshMinutes = 120;
+  int16_t utcOffsetMinutes = 0;
+  String splashScreen = F("*** Hevi ***");
+  secrets_t secrets;
 };
 // NOTE: Keep this number in sync with the above struct.
 #define CONFIG_NUMBER_OF_SETTINGS 4
 
-void loadConfiguration(eSPIFFS &fs, settings_t &config);
+#ifdef USE_SPIFFS
+
+#include <Effortless_SPIFFS.h>
+
+void loadConfiguration(settings_t &config);
+
+#else //USE_SPIFFS
+#define loadConfiguration(a) \
+  {                          \
+  }
+#endif

@@ -24,13 +24,14 @@
 
 #pragma once
 
-typedef struct color_t {
-    uint8_t _red;
-    uint8_t _green;
-    uint8_t _blue;
+typedef struct color_t
+{
+  uint8_t _red;
+  uint8_t _green;
+  uint8_t _blue;
 
-    color_t() {}
-    color_t(uint8_t red, uint8_t green, uint8_t blue) : _red(red), _green(green), _blue(blue) {}
+  color_t() {}
+  color_t(uint8_t red, uint8_t green, uint8_t blue) : _red(red), _green(green), _blue(blue) {}
 } color_t;
 
 class StatusLed
@@ -38,4 +39,11 @@ class StatusLed
 public:
   virtual void setColor(color_t color, float brightness = 1.0) = 0;
   virtual void clearColor() = 0;
+};
+
+class NullStatusLed : public StatusLed
+{
+public:
+  void setColor(color_t color, float brightness = 1.0){};
+  void clearColor(){};
 };

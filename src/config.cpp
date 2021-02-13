@@ -21,9 +21,12 @@
 // DEALINGS IN THE SOFTWARE.                                                  //
 //                                                                            //
 //----------------------------------------------------------------------------//
+#ifdef USE_SPIFFS
 
 #include "config.h"
 #include <ArduinoJson.h>
+#include <SPIFFS.h>
+#include <Effortless_SPIFFS.h>
 
 #define SETTINGS_FILE "/settings.json"
 #define SECRETS_FILE "/secrets.json"
@@ -82,8 +85,12 @@ void loadSettings(eSPIFFS &fs, settings_t &config)
     }
 }
 
-void loadConfiguration(eSPIFFS &fs, settings_t &config)
+void loadConfiguration(settings_t &config)
 {
+    eSPIFFS fs(&Serial);
+
     loadSettings(fs, config);
     loadSecrets(fs, config.secrets);
 }
+
+#endif //STM32_MCU_SERIES

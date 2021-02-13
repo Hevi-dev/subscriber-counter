@@ -26,9 +26,18 @@
 
 #include <ArduinoJson.h>
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
 #include <HttpClient.h>
 #include <StreamUtils.h>
+
+#ifdef USE_WIFI_CLIENT_SECURE
+#define SECURE_CLIENT WiFiClientSecure
+#include <WiFiClientSecure.h>
+#elif USE_SSL_CLIENT
+#define SECURE_CLIENT WiFiSSLClient
+#include <WiFiSSLClient.h>
+#else
+#error "No secure client found."
+#endif
 
 namespace youtube
 {
@@ -38,7 +47,7 @@ namespace youtube
     stats_t getChannelStatistics(String channelId, String apiKey)
     {
         stats_t result = {0};
-        WiFiClientSecure client;
+        SECURE_CLIENT client;
         HttpClient http(client, youtubeHost, 443);
         String endpoint = channelEndpoint;
         endpoint.replace("<CHANNEL>", channelId);

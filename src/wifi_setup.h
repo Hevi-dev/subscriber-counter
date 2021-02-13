@@ -17,7 +17,7 @@ void initializeWiFi(StatusLed &status, String ssid, String password)
     Serial.println(F("Wifi SSID not set."));
     while (true)
     {
-      sleep(600);
+      delay(1000);
     }
   }
 
