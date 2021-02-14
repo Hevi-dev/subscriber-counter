@@ -25,23 +25,16 @@
 #pragma once
 
 #include "StatusLed.h"
-#include <APA102.h>
+#include <FastLED.h>
 
-template <uint8_t dataPin, uint8_t clockPin>
-class DotStarStatusLed : public StatusLed
+class FastLEDStatusLed : public StatusLed
 {
 public:
-  void setColor(color_t color, float brightness = 1.0)
-  {
-    rgb_color _color = rgb_color(color._red, color._green, color._blue);
-    led.write(&_color, 1, uint8_t(brightness * 31));
-  }
+    FastLEDStatusLed(CLEDController &controller);
 
-  void clearColor()
-  {
-    this->setColor(color_t(0, 0, 0), 0.0);
-  }
+    void setColor(color_t color, float brightness = 1.0) override;
+    void clearColor() override;
 
 private:
-  APA102<dataPin, clockPin> led;
+    CLEDController &led;
 };

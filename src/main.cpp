@@ -31,6 +31,8 @@
 #include <animation/SweepAnimation.h>
 
 #include <config.h>
+#include <FastLED.h>
+#include <FastLEDStatusLed.h>
 #include <wifi_setup.h>
 #include <youtube.h>
 
@@ -40,12 +42,15 @@
 #include <NullDisplay.h>
 #endif
 
+CRGB statusLed = CRGB::Black;
+
 #ifdef STATUS_DOTSTAR
-#include <DotStarStatusLed.h>
-DotStarStatusLed<STATUS_DOTSTAR_DATA, STATUS_DOTSTAR_CLOCK> status;
+FastLEDStatusLed status(FastLED.addLeds<DOTSTAR, STATUS_DOTSTAR_DATA, STATUS_DOTSTAR_CLOCK, RGB>(&statusLed, 1));
 #elif STATUS_NEOPIXEL
-#include <StatusLed.h>
-NullStatusLed status;
+#ifndef STATUS_NEOPIXEL_DATA
+#define STATUS_NEOPIXEL_DATA PIN_NEOPIXEL
+#endif
+FastLEDStatusLed status(FastLED.addLeds<NEOPIXEL, STATUS_NEOPIXEL_DATA>(&statusLed, 1));
 #endif
 
 #define BASE_PAGE_COUNT 2
