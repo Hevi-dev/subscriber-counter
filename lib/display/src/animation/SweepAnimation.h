@@ -45,7 +45,7 @@ public:
         if (frameTimer.periodic())
         {
             calculateNextFrame(output);
-            return true;
+            return inProgress;
         }
 
         return false;
@@ -62,10 +62,9 @@ private:
     {
         int length = target.length();
         inProgress = buffer.substring(0, length) != target;
-
         if (inProgress)
         {
-            if (nextChar < 12 && frameCount % charFrameDelay == 0)
+            if (nextChar < length && frameCount % charFrameDelay == 0)
             {
                 if (buffer.length() <= nextChar)
                 {

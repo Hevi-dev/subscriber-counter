@@ -39,7 +39,7 @@
 #ifdef DISPLAY_ALPHA
 #include <AlphaDisplay.h>
 #else
-#include <NullDisplay.h>
+#include <SerialDisplay.h>
 #endif
 
 CRGB statusLed = CRGB::Black;
@@ -117,7 +117,7 @@ void setup()
 #ifdef DISPLAY_ALPHA
   auto hardwareDisplay = new AlphaDisplay();
 #else
-  auto hardwareDisplay = new NullDisplay();
+  auto hardwareDisplay = new SerialDisplay();
 #endif
   pagedDisplay = new PagedDisplay<pageCount>(hardwareDisplay);
   display = pagedDisplay->getDisplayForPage(0);
