@@ -22,15 +22,16 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#include "SerialDisplay.h"
+#pragma once
 
-void SerialDisplay::show(String text){
-    Serial.println(text);
-};
+#include <board.h>
+#include <AlphaDisplay.h>
 
-void SerialDisplay::clear(){};
-
-uint8_t SerialDisplay::size()
+class WoprBoard : public Board
 {
-    return 12;
-}
+public:
+    ~WoprBoard();
+    void tick();
+private:
+    AlphaDisplay *display;
+};

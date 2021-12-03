@@ -22,15 +22,25 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#include "SerialDisplay.h"
+#pragma once
 
-void SerialDisplay::show(String text){
-    Serial.println(text);
-};
+#include <Arduino.h>
 
-void SerialDisplay::clear(){};
-
-uint8_t SerialDisplay::size()
+namespace youtube
 {
-    return 12;
+
+    typedef struct stats_t
+    {
+        bool valid;
+        uint32_t subscriberCount;
+        uint32_t viewCount;
+    } stats_t;
+
+    stats_t getChannelStatistics(String channelId, String apiKey);
+
+    class Renderer
+    {
+    public:
+        virtual void onDataUpdate(stats_t data) = 0;
+    };
 }

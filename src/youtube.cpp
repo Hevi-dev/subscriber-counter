@@ -44,14 +44,14 @@ namespace youtube
     const String channelEndpoint = "/youtube/v3/channels?part=statistics&id=<CHANNEL>&key=<APIKEY>";
     const String youtubeHost = "youtube.googleapis.com";
 
-    stats_t getChannelStatistics(String channelId, String apiKey)
+    youtube::stats_t getChannelStatistics(String channelId, String apiKey)
     {
-        stats_t result = {0};
+        youtube::stats_t result = {0};
         SECURE_CLIENT client;
         HttpClient http(client, youtubeHost, 443);
         String endpoint = channelEndpoint;
-        endpoint.replace("<CHANNEL>", channelId);
-        endpoint.replace("<APIKEY>", apiKey);
+        endpoint.replace("<CHANNEL>", "UCu94OHbBYVUXLYPh4NBu10w");
+        endpoint.replace("<APIKEY>", "AIzaSyDIRZ12giLATSRypPGThZiEnJC4tCzEzRc");
 
         http.get(endpoint);
         auto statusCode = http.responseStatusCode();

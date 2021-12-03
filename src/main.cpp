@@ -69,10 +69,10 @@ Timeout fetchDataTimeout;
 settings_t config;
 
 #define DEBOUNCE_TIME 10
-const int nextPagePin = 14;
-const int previousPagePin = 15;
-EButton nextPageButton(nextPagePin, false);
-EButton previousPageButton(previousPagePin, false);
+const int nextPagePin = 2;
+const int previousPagePin = 3;
+EButton nextPageButton(nextPagePin, true);
+EButton previousPageButton(previousPagePin, true);
 Timeout pageCycleTimeout;
 bool cyclePages = false;
 

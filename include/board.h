@@ -22,15 +22,17 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#include "SerialDisplay.h"
+#pragma once
 
-void SerialDisplay::show(String text){
-    Serial.println(text);
+#include <Arduino.h>
+#include "youtube.h"
+
+class Board
+{
+public:
+    virtual ~Board() = 0;
+    virtual void tick() = 0;
+    virtual youtube::Renderer *getYouTubeRenderer() = 0;
 };
 
-void SerialDisplay::clear(){};
-
-uint8_t SerialDisplay::size()
-{
-    return 12;
-}
+Board *createBoard();

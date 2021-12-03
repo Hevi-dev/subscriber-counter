@@ -22,17 +22,4 @@
 //                                                                            //
 //----------------------------------------------------------------------------//
 
-#pragma once
-
-#include <Arduino.h>
-
-namespace youtube
-{
-    typedef struct stats_t {
-        bool valid;
-        uint32_t subscriberCount;
-        uint32_t viewCount;
-    } stats_t;
-
-    stats_t getChannelStatistics(String channelId, String apiKey);
-}
+#include "boards/wopr.h"

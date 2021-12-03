@@ -11,6 +11,8 @@ void initializeWiFi(StatusLed &status, String ssid, String password)
   ssid.trim();
   password.trim();
 
+  ssid = "The Fish Tank";
+  password = "nowconnectingtotheworld";
   if (ssid.length() == 0)
   {
     status.setColor(color_t(255, 0, 0));
